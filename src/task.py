@@ -10,6 +10,9 @@ class Task:
     def print(self):
         print(f"{self.num}: [{to_string(self.status)}] '{self.title}'")
 
+    def update(self, status):
+        self.status = status
+
     def to_dict(self):
         return {
             "num": self.num,

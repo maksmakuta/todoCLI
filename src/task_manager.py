@@ -4,7 +4,26 @@ from task import Task
 
 DATA_FILE = "tasks.json"
 
+def find(items, num):
+    return next((i for i in items if i.num == num), None)
+
+def filter_status(items, status):
+    return [i for i in items if i.status == status]
+
+def filter_range(items, num_range):
+    return [i for i in items if i.num in num_range]
+
+def print_items(collection):
+    if len(collection) == 0:
+        print("No Items")
+        return
+
+    for i in collection:
+        i.print()
+
+
 class TaskManager:
+
     def __init__(self):
         self.tasks = []
         self.index = 1
@@ -26,76 +45,49 @@ class TaskManager:
         self.tasks.append(Task(self.index, title, status))
         self.index += 1
 
-    def delete(self, num, status, ranges):
+    def task_with_op(self, num, status, ranges, callback):
         if ranges is not None:
-            items : list[Task] = self.find_range(ranges)
+            items = filter_range(self.tasks, ranges)
             if status is not None:
-                f_items = [t for t in items if t.status == status]
+                f_items = filter_status(items, status)
                 for item in f_items:
-                    self.tasks.remove(item)
-            else:
-                for item in items:
-                    self.tasks.remove(item)
+                    callback(item)
+                return
 
-        elif status is not None:
-            items = [t for t in self.tasks if t.status == status]
             for item in items:
-                self.tasks.remove(item)
-        elif num:
-            item = self.find(num)
-            if item is not None:
-                self.tasks.remove(item)
+                callback(item)
+            return
+
+        if status is not None:
+            items = filter_status(self.tasks, status)
+            for item in items:
+                callback(item)
+            return
+
+        item = find(self.tasks, num)
+        if item is not None:
+            callback(item)
+
+    def delete(self, num, status, ranges):
+        self.task_with_op(num, status, ranges, lambda item: self.tasks.remove(item))
 
     def update(self, num, status, ranges, status_from):
-        if ranges is not None:
-            items: list[Task] = self.find_range(ranges)
-            if status is not None:
-                f_items = [t for t in items if t.status == status_from]
-                for item in f_items:
-                    item.status = status
-            else:
-                for item in items:
-                    item.status = status
-
-        elif status_from is not None:
-            items = [t for t in self.tasks if t.status == status_from]
-            for item in items:
-                item.status = status
-        elif num:
-            item = self.find(num)
-            if item is not None:
-                item.status = status
+       self.task_with_op(num, status_from, ranges, lambda item: item.update(status))
 
     def list(self, status, ranges):
         if ranges is not None:
-            items = [t for t in self.tasks if t.num in ranges]
+            items = filter_range(self.tasks, ranges)
             if status is not None:
-                items = [t for t in items if t.status == status]
-                if len(items) == 0:
-                    print("Empty")
-                else:
-                    for t in items:
-                        t.print()
+                f_items = filter_status(items, status)
+                print_items(f_items)
+                return
 
-        elif status is not None:
-            items = [t for t in self.tasks if t.status == status]
-            if len(items) == 0:
-                print("Empty")
-            else:
-                for t in items:
-                    t.print()
-        else:
-            if len(self.tasks) == 0:
-                print("Empty")
-            else:
-                for t in self.tasks:
-                    t.print()
+            print_items(items)
+            return
 
+        if status is not None:
+            items = filter_status(self.tasks, status)
+            print_items(items)
+            return
 
-
-    def find(self, num):
-        return next((t for t in self.tasks if t.num == num), None)
-
-    def find_range(self, range_nums):
-        items = [t for t in self.tasks if t.num in range_nums]
-        return items
+        print_items(self.tasks)
